@@ -50,13 +50,15 @@ namespace DDay.iCal.Test
                 pattern = evt.RecurrenceRules[0];
             }
 
+            var sortedOccurrences = occurrences.OrderBy(o => o.Period.StartTime).ToList();
+
             for (var i = 0; i < dateTimes.Length; i++)
             {
                 // Associate each incoming date/time with the calendar.
                 dateTimes[i].AssociatedObject = iCal;
 
                 var dt = dateTimes[i];
-                Assert.AreEqual(dt, occurrences[i].Period.StartTime, "Event should occur on " + dt);
+                Assert.AreEqual(dt, sortedOccurrences[i].Period.StartTime, "Event should occur on " + dt);
                 if (timeZones != null)
                     Assert.AreEqual(timeZones[i], dt.TimeZoneName, "Event " + dt + " should occur in the " + timeZones[i] + " timezone");
 
@@ -94,6 +96,8 @@ namespace DDay.iCal.Test
                 new iCalDateTime(2006, 1, 1, tzid),
                 new iCalDateTime(2011, 1, 1, tzid));
 
+            var sortedOccurrences = occurrences.OrderBy(o => o.Period.StartTime).ToList();
+
             IDateTime dt = new iCalDateTime(2007, 1, 1, 8, 30, 0, tzid);
             var i = 0;
 
@@ -105,8 +109,8 @@ namespace DDay.iCal.Test
                     (dt.DayOfWeek == DayOfWeek.Sunday))
                 {
                     var dt1 = dt.AddHours(1);
-                    Assert.AreEqual(dt, occurrences[i].Period.StartTime, "Event should occur at " + dt);
-                    Assert.AreEqual(dt1, occurrences[i + 1].Period.StartTime, "Event should occur at " + dt);
+                    Assert.AreEqual(dt, sortedOccurrences[i].Period.StartTime, "Event should occur at " + dt);
+                    Assert.AreEqual(dt1, sortedOccurrences[i + 1].Period.StartTime, "Event should occur at " + dt);
                     i += 2;
                 }
 
@@ -156,6 +160,8 @@ namespace DDay.iCal.Test
                 new iCalDateTime(1997, 9, 1, tzid),
                 new iCalDateTime(1998, 1, 1, tzid));
 
+            var sortedOccurrences = occurrences.OrderBy(o => o.Period.StartTime).ToList();
+
             IDateTime dt = new iCalDateTime(1997, 9, 2, 9, 0, 0, tzid);
             var i = 0;
             while (dt.Year < 1998)
@@ -163,7 +169,7 @@ namespace DDay.iCal.Test
                 if ((dt.GreaterThanOrEqual(evt.Start)) &&
                     (dt.LessThan(new iCalDateTime(1997, 12, 24, 0, 0, 0, tzid))))
                 {
-                    Assert.AreEqual(dt, occurrences[i].Period.StartTime, "Event should occur at " + dt);
+                    Assert.AreEqual(dt, sortedOccurrences[i].Period.StartTime, "Event should occur at " + dt);
                     Assert.IsTrue(
                         (dt.LessThan(new iCalDateTime(1997, 10, 26, tzid)) && dt.TimeZoneName == "EDT") ||
                         (dt.GreaterThan(new iCalDateTime(1997, 10, 26, tzid)) && dt.TimeZoneName == "EST"),
@@ -326,6 +332,8 @@ namespace DDay.iCal.Test
                 new iCalDateTime(1998, 1, 1, tzid),
                 new iCalDateTime(2000, 12, 31, tzid));
 
+            var sortedOccurrences = occurrences.OrderBy(o => o.Period.StartTime).ToList();
+
             IDateTime dt = new iCalDateTime(1998, 1, 1, 9, 0, 0, tzid);
             var i = 0;
             while (dt.Year < 2001)
@@ -334,7 +342,7 @@ namespace DDay.iCal.Test
                     dt.Month == 1 &&
                     dt.LessThanOrEqual(new iCalDateTime(2000, 1, 31, 9, 0, 0, tzid)))
                 {
-                    Assert.AreEqual(dt, occurrences[i].Period.StartTime, "Event should occur at " + dt);
+                    Assert.AreEqual(dt, sortedOccurrences[i].Period.StartTime, "Event should occur at " + dt);
                     i++;
                 }
 
@@ -360,11 +368,17 @@ namespace DDay.iCal.Test
             IEvent evt1 = (Event)iCal1.Events.First();
             IEvent evt2 = (Event)iCal2.Events.First();
 
-            var evt1Occurrences = evt1.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(2000, 12, 31));
-            var evt2Occurrences = evt2.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(2000, 12, 31));
+            var evt1Occurrences = evt1.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(2000, 12, 31)).OrderBy(o => o.Period.StartTime).ToList();
+            var evt2Occurrences = evt2.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(2000, 12, 31)).OrderBy(o => o.Period.StartTime).ToList();
+
             Assert.IsTrue(evt1Occurrences.Count == evt2Occurrences.Count, "ByMonth1 does not match ByMonth2 as it should");
+
             for (var i = 0; i < evt1Occurrences.Count; i++)
-                Assert.AreEqual(evt1Occurrences[i].Period, evt2Occurrences[i].Period, "PERIOD " + i + " from ByMonth1 (" + evt1Occurrences[i].ToString() + ") does not match PERIOD " + i + " from ByMonth2 (" + evt2Occurrences[i].ToString() + ")");
+            {
+                Assert.AreEqual(evt1Occurrences[i].Period, evt2Occurrences[i].Period,
+                    "PERIOD " + i + " from ByMonth1 (" + evt1Occurrences[i] + ") does not match PERIOD " + i + " from ByMonth2 (" +
+                    evt2Occurrences[i] + ")");
+            }
         }
 
         /// <summary>
@@ -544,11 +558,15 @@ namespace DDay.iCal.Test
             var evt1 = iCal1.Events.First();
             var evt2 = iCal2.Events.First();
 
-            var evt1occ = evt1.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(1999, 1, 1));
-            var evt2occ = evt2.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(1999, 1, 1));
+            var evt1occ = evt1.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(1999, 1, 1)).OrderBy(o => o.Period.StartTime).ToList();
+            var evt2occ = evt2.GetOccurrences(new iCalDateTime(1997, 9, 1), new iCalDateTime(1999, 1, 1)).OrderBy(o => o.Period.StartTime).ToList();
             Assert.AreEqual(evt1occ.Count, evt2occ.Count, "WeeklyCountWkst1() does not match WeeklyUntilWkst1() as it should");
             for (var i = 0; i < evt1occ.Count; i++)
-                Assert.AreEqual(evt1occ[i].Period, evt2occ[i].Period, "PERIOD " + i + " from WeeklyUntilWkst1 (" + evt1occ[i].Period.ToString() + ") does not match PERIOD " + i + " from WeeklyCountWkst1 (" + evt2occ[i].Period.ToString() + ")");
+            {
+                Assert.AreEqual(evt1occ[i].Period, evt2occ[i].Period,
+                    "PERIOD " + i + " from WeeklyUntilWkst1 (" + evt1occ[i].Period + ") does not match PERIOD " + i + " from WeeklyCountWkst1 (" +
+                    evt2occ[i].Period + ")");
+            }
         }
 
         /// <summary>
@@ -1768,11 +1786,11 @@ namespace DDay.iCal.Test
             var evt1 = iCal1.Events.First();
             var evt2 = iCal2.Events.First();
 
-            var evt1occ = evt1.GetOccurrences(new iCalDateTime(1997, 9, 1, tzid), new iCalDateTime(1997, 9, 3, tzid));
-            var evt2occ = evt2.GetOccurrences(new iCalDateTime(1997, 9, 1, tzid), new iCalDateTime(1997, 9, 3, tzid));
+            var evt1occ = evt1.GetOccurrences(new iCalDateTime(1997, 9, 1, tzid), new iCalDateTime(1997, 9, 3, tzid)).OrderBy(o => o.Period.StartTime).ToList();
+            var evt2occ = evt2.GetOccurrences(new iCalDateTime(1997, 9, 1, tzid), new iCalDateTime(1997, 9, 3, tzid)).OrderBy(o => o.Period.StartTime).ToList();
             Assert.IsTrue(evt1occ.Count == evt2occ.Count, "MinutelyByHour1() does not match DailyByHourMinute1() as it should");
             for (var i = 0; i < evt1occ.Count; i++)
-                Assert.AreEqual(evt1occ[i].Period, evt2occ[i].Period, "PERIOD " + i + " from DailyByHourMinute1 (" + evt1occ[i].Period.ToString() + ") does not match PERIOD " + i + " from MinutelyByHour1 (" + evt2occ[i].Period.ToString() + ")");
+                Assert.AreEqual(evt1occ[i].Period, evt2occ[i].Period, "PERIOD " + i + " from DailyByHourMinute1 (" + evt1occ[i].Period + ") does not match PERIOD " + i + " from MinutelyByHour1 (" + evt2occ[i].Period + ")");
         }
 
         /// <summary>
@@ -2752,7 +2770,7 @@ namespace DDay.iCal.Test
 
             var occurrences = evt.GetOccurrences(
                 new iCalDateTime(2006, 10, 1),
-                new iCalDateTime(2007, 4, 30));
+                new iCalDateTime(2007, 4, 30)).OrderBy(o => o.Period.StartTime).ToList();
 
             var DateTimes = new iCalDateTime[]
             {
@@ -2791,7 +2809,7 @@ namespace DDay.iCal.Test
 
             var occurrences = evt.GetOccurrences(
                 new iCalDateTime(2006, 10, 1),
-                new iCalDateTime(2006, 10, 6));
+                new iCalDateTime(2006, 10, 6)).OrderBy(o => o.Period.StartTime).ToList();
 
             var DateTimes = new iCalDateTime[]
             {
@@ -2829,7 +2847,7 @@ namespace DDay.iCal.Test
 
             var occurrences = evt.GetOccurrences(
                 new iCalDateTime(2006, 1, 1),
-                new iCalDateTime(2006, 12, 31));
+                new iCalDateTime(2006, 12, 31)).OrderBy(o => o.Period.StartTime).ToList();
 
             var DateTimes = new iCalDateTime[]
             {
@@ -2868,7 +2886,7 @@ namespace DDay.iCal.Test
 
             var occurrences = evt.GetOccurrences(
                 new iCalDateTime(2006, 1, 1),
-                new iCalDateTime(2006, 1, 31));
+                new iCalDateTime(2006, 1, 31)).OrderBy(o => o.Period.StartTime).ToList();
 
             var DateTimes = new iCalDateTime[]
             {
@@ -2905,7 +2923,7 @@ namespace DDay.iCal.Test
 
             var occurrences = evt.GetOccurrences(
                 new iCalDateTime(2006, 1, 1),
-                new iCalDateTime(2006, 1, 31));
+                new iCalDateTime(2006, 1, 31)).OrderBy(o => o.Period.StartTime).ToList();
 
             var DateTimes = new iCalDateTime[]
             {
@@ -2943,7 +2961,7 @@ namespace DDay.iCal.Test
 
             var occurrences = evt.GetOccurrences(
                 new iCalDateTime(2006, 1, 1),
-                new iCalDateTime(2006, 3, 31));
+                new iCalDateTime(2006, 3, 31)).OrderBy(o => o.Period.StartTime).ToList();
 
             var DateTimes = new iCalDateTime[]
             {
@@ -3059,9 +3077,8 @@ namespace DDay.iCal.Test
             var laterDateAndTime = new iCalDateTime(2009, 11, 19, 11, 0, 0);
             var end = new iCalDateTime(2009, 11, 23, 0, 0, 0);
 
-            IList<Occurrence> occurrences = null;
 
-            occurrences = evt.GetOccurrences(previousDateAndTime, end);
+            var occurrences = evt.GetOccurrences(previousDateAndTime, end);
             Assert.AreEqual(5, occurrences.Count);
 
             occurrences = evt.GetOccurrences(previousDateOnly, end);

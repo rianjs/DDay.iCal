@@ -159,10 +159,12 @@ namespace DDay.iCal.Test
                 "EST"                
             };
 
+            var sortedOccurrences = occurrences.OrderBy(o => o.Period.StartTime).ToList();
+
             for (var i = 0; i < DateTimes.Length; i++)
             {
                 IDateTime dt = DateTimes[i];
-                var start = occurrences[i].Period.StartTime;
+                var start = sortedOccurrences[i].Period.StartTime;
                 Assert.AreEqual(dt, start);
                 Assert.IsTrue(dt.TimeZoneName == TimeZones[i], "Event " + dt + " should occur in the " + TimeZones[i] + " timezone");
             }
@@ -218,10 +220,12 @@ namespace DDay.iCal.Test
                 "EST"                
             };
 
+            sortedOccurrences = occurrences.OrderBy(o => o.Period.StartTime).ToList();
+
             for (var i = 0; i < DateTimes1.Length; i++)
             {
                 IDateTime dt = DateTimes1[i];
-                var start = occurrences[i].Period.StartTime;
+                var start = sortedOccurrences[i].Period.StartTime;
                 Assert.AreEqual(dt, start);
                 Assert.IsTrue(dt.TimeZoneName == TimeZones1[i], "Event " + dt + " should occur in the " + TimeZones1[i] + " timezone");
             }

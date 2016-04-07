@@ -700,13 +700,13 @@ namespace DDay.iCal
         /// </summary>
         /// <param name="dt">The date for which to return occurrences. Time is ignored on this parameter.</param>
         /// <returns>A list of occurrences that occur on the given date (<paramref name="dt"/>).</returns>
-        virtual public IList<Occurrence> GetOccurrences(IDateTime dt)
+        virtual public HashSet<Occurrence> GetOccurrences(IDateTime dt)
         {
             return GetOccurrences<IRecurringComponent>(
                 new iCalDateTime(dt.Local.Date),
                 new iCalDateTime(dt.Local.Date.AddDays(1).AddSeconds(-1)));
         }
-        virtual public IList<Occurrence> GetOccurrences(DateTime dt)
+        virtual public HashSet<Occurrence> GetOccurrences(DateTime dt)
         {
             return GetOccurrences<IRecurringComponent>(
                 new iCalDateTime(dt.Date),
@@ -720,11 +720,11 @@ namespace DDay.iCal
         /// <param name="startTime">The beginning date/time of the range.</param>
         /// <param name="endTime">The end date/time of the range.</param>
         /// <returns>A list of occurrences that fall between the dates provided.</returns>
-        virtual public IList<Occurrence> GetOccurrences(IDateTime startTime, IDateTime endTime)
+        virtual public HashSet<Occurrence> GetOccurrences(IDateTime startTime, IDateTime endTime)
         {
             return GetOccurrences<IRecurringComponent>(startTime, endTime);
         }
-        virtual public IList<Occurrence> GetOccurrences(DateTime startTime, DateTime endTime)
+        virtual public HashSet<Occurrence> GetOccurrences(DateTime startTime, DateTime endTime)
         {
             return GetOccurrences<IRecurringComponent>(new iCalDateTime(startTime), new iCalDateTime(endTime));
         }
@@ -741,13 +741,13 @@ namespace DDay.iCal
         /// </summary>
         /// <param name="dt">The date for which to return occurrences.</param>
         /// <returns>A list of Periods representing the occurrences of this object.</returns>
-        virtual public IList<Occurrence> GetOccurrences<T>(IDateTime dt) where T : IRecurringComponent
+        virtual public HashSet<Occurrence> GetOccurrences<T>(IDateTime dt) where T : IRecurringComponent
         {
             return GetOccurrences<T>(
                 new iCalDateTime(dt.Local.Date),
                 new iCalDateTime(dt.Local.Date.AddDays(1).AddTicks(-1)));
         }
-        virtual public IList<Occurrence> GetOccurrences<T>(DateTime dt) where T : IRecurringComponent
+        virtual public HashSet<Occurrence> GetOccurrences<T>(DateTime dt) where T : IRecurringComponent
         {
             return GetOccurrences<T>(
                 new iCalDateTime(dt.Date),
@@ -761,13 +761,13 @@ namespace DDay.iCal
         /// </summary>
         /// <param name="startTime">The starting date range</param>
         /// <param name="endTime">The ending date range</param>
-        virtual public IList<Occurrence> GetOccurrences<T>(IDateTime startTime, IDateTime endTime) where T : IRecurringComponent
+        virtual public HashSet<Occurrence> GetOccurrences<T>(IDateTime startTime, IDateTime endTime) where T : IRecurringComponent
         {
-            var occurrences = new List<Occurrence>();
+            var occurrences = new HashSet<Occurrence>();
             foreach (var recurrable in RecurringItems)
             {
                 if (recurrable is T)
-                    occurrences.AddRange(recurrable.GetOccurrences(startTime, endTime));
+                    occurrences.UnionWith(recurrable.GetOccurrences(startTime, endTime));
             }
 
             foreach (var baseRecurringItem in occurrences.Where(o => o.Source is IUniqueComponent)
@@ -778,10 +778,10 @@ namespace DDay.iCal
                 occurrences.Remove(baseRecurringItem);
             }
 
-            occurrences.Sort();
+            //occurrences.Sort();
             return occurrences;
         }
-        virtual public IList<Occurrence> GetOccurrences<T>(DateTime startTime, DateTime endTime) where T : IRecurringComponent
+        virtual public HashSet<Occurrence> GetOccurrences<T>(DateTime startTime, DateTime endTime) where T : IRecurringComponent
         {
             return GetOccurrences<T>(new iCalDateTime(startTime), new iCalDateTime(endTime));
         }
