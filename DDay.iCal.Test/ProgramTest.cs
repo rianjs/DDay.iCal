@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using DDay.iCal.Serialization.iCalendar;
+using NodaTime;
 using NUnit.Framework;
 
 namespace DDay.iCal.Test
@@ -9,42 +10,17 @@ namespace DDay.iCal.Test
     [TestFixture]
     public class ProgramTest
     {
-        [Test]
+        //[Test]
         public void LoadAndDisplayCalendar()
         {
             // The following code loads and displays an iCalendar
             // with US Holidays for 2006.
-            //
             var iCal = iCalendar.LoadFromFile(@"Calendars\Serialization\USHolidays.ics")[0];
             Assert.IsNotNull(iCal, "iCalendar did not load.  Are you connected to the internet?");
 
             var occurrences = iCal.GetOccurrences(
                 new iCalDateTime(2006, 1, 1, "US-Eastern"),
                 new iCalDateTime(2006, 12, 31, "US-Eastern"));
-
-            foreach (var o in occurrences)
-            {
-                var evt = o.Source as IEvent;
-                if (evt != null)
-                {
-                    // Display the date of the event
-                    Console.Write(o.Period.StartTime.Local.Date.ToString("MM/dd/yyyy") + " -\t");
-
-                    // Display the event summary
-                    Console.Write(evt.Summary);
-
-                    // Display the time the event happens (unless it's an all-day event)
-                    if (evt.Start.HasTime)
-                    {
-                        Console.Write(" (" + evt.Start.Local.ToShortTimeString() + " - " + evt.End.Local.ToShortTimeString());
-                        if (evt.Start.TimeZoneObservance != null && evt.Start.TimeZoneObservance.HasValue)
-                            Console.Write(" " + evt.Start.TimeZoneObservance.Value.TimeZoneInfo.TimeZoneName);
-                        Console.Write(")");
-                    }
-
-                    Console.Write(Environment.NewLine);
-                }
-            }
         }
 
         private DateTime Start;
@@ -166,7 +142,7 @@ namespace DDay.iCal.Test
                 IDateTime dt = DateTimes[i];
                 var start = sortedOccurrences[i].Period.StartTime;
                 Assert.AreEqual(dt, start);
-                Assert.IsTrue(dt.TimeZoneName == TimeZones[i], "Event " + dt + " should occur in the " + TimeZones[i] + " timezone");
+                Assert.IsTrue(dt.TZID == TimeZones[i], "Event " + dt + " should occur in the " + TimeZones[i] + " timezone");
             }
 
             Assert.IsTrue(occurrences.Count == DateTimes.Length, "There should be exactly " + DateTimes.Length + " occurrences; there were " + occurrences.Count);
@@ -227,7 +203,7 @@ namespace DDay.iCal.Test
                 IDateTime dt = DateTimes1[i];
                 var start = sortedOccurrences[i].Period.StartTime;
                 Assert.AreEqual(dt, start);
-                Assert.IsTrue(dt.TimeZoneName == TimeZones1[i], "Event " + dt + " should occur in the " + TimeZones1[i] + " timezone");
+                Assert.IsTrue(dt.TZID == TimeZones1[i], "Event " + dt + " should occur in the " + TimeZones1[i] + " timezone");
             }
 
             Assert.AreEqual(DateTimes1.Length, occurrences.Count, "There should be exactly " + DateTimes1.Length + " occurrences; there were " + occurrences.Count);

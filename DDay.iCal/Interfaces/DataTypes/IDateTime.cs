@@ -1,4 +1,5 @@
 ﻿using System;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -10,29 +11,18 @@ namespace DDay.iCal
         /// <summary>
         /// Converts the date/time to this computer's local date/time.
         /// </summary>
-        DateTime Local { get; }
+        ZonedDateTime Local { get; }
 
         /// <summary>
         /// Converts the date/time to UTC (Coordinated Universal Time)
         /// </summary>
-        DateTime UTC { get; }
-
-        /// <summary>
-        /// Retrieves the <see cref="iCalTimeZoneInfo"/> object for the time
-        /// zone set by <see cref="TZID"/>.
-        /// </summary>
-        TimeZoneObservance? TimeZoneObservance { get; set; }
+        ZonedDateTime UTC { get; }
 
         /// <summary>
         /// Gets/sets whether the Value of this date/time represents
         /// a universal time.
         /// </summary>
-        bool IsUniversalTime { get; set; }
-
-        /// <summary>
-        /// Gets the time zone name this time is in, if it references a time zone.
-        /// </summary>
-        string TimeZoneName { get; }
+        bool IsUniversalTime { get; }
 
         /// <summary>
         /// Gets/sets the underlying DateTime value stored.  This should always
@@ -40,22 +30,22 @@ namespace DDay.iCal
         /// Use IsUniversalTime along with the TZID to control how this
         /// date/time is handled.
         /// </summary>
-        DateTime Value { get; set; }
+        ZonedDateTime Value { get; }
 
         /// <summary>
         /// Gets/sets whether or not this date/time value contains a 'date' part.
         /// </summary>
-        bool HasDate { get; set; }
+        bool HasDate { get; }
 
         /// <summary>
         /// Gets/sets whether or not this date/time value contains a 'time' part.
         /// </summary>
-        bool HasTime { get; set; }
+        bool HasTime { get; }
 
         /// <summary>
         /// Gets/sets the time zone ID for this date/time value.
         /// </summary>
-        string TZID { get; set; }
+        string TZID { get; }
 
         /// <summary>
         /// Gets the year for this date/time value.
@@ -101,52 +91,29 @@ namespace DDay.iCal
         /// Gets the DayOfWeek for this date/time value.
         /// </summary>
         DayOfWeek DayOfWeek { get; }
-        
-        /// <summary>
-        /// Gets the DayOfYear for this date/time value.
-        /// </summary>
-        int DayOfYear { get; }
-
-        /// <summary>
-        /// Gets the first day of the year currently represented by the IDateTime instance.
-        /// </summary>
-        IDateTime FirstDayOfYear { get; }
-
-        /// <summary>
-        /// Gets the first day of the month currently represented by the IDateTime instance.
-        /// </summary>
-        IDateTime FirstDayOfMonth { get; }
 
         /// <summary>
         /// Gets the date portion of the date/time value.
         /// </summary>
-        DateTime Date { get; }
-        
-        /// <summary>
-        /// Gets the time portion of the date/time value.
-        /// </summary>
-        TimeSpan TimeOfDay { get; }
+        LocalDate Date { get; }
 
         /// <summary>
         /// Converts the date/time value to a local time
         /// within the specified time zone.
         /// </summary>
-        IDateTime ToTimeZone(TimeZoneObservance tzo);
+        //IDateTime ToTimeZone(TimeZoneObservance tzo);
 
         /// <summary>
         /// Converts the date/time value to a local time
         /// within the specified time zone.
         /// </summary>
-        IDateTime ToTimeZone(string tzid);
-        IDateTime ToTimeZone(ITimeZone tz);
-        IDateTime SetTimeZone(ITimeZone tz);
+        //IDateTime ToTimeZone(ITimeZone tz);//inside other totimezone
 
         IDateTime Add(TimeSpan ts);
         IDateTime Subtract(TimeSpan ts);
         TimeSpan Subtract(IDateTime dt);
 
         IDateTime AddYears(int years);
-        IDateTime AddMonths(int months);
         IDateTime AddDays(int days);
         IDateTime AddHours(int hours);
         IDateTime AddMinutes(int minutes);
@@ -160,6 +127,6 @@ namespace DDay.iCal
         bool GreaterThanOrEqual(IDateTime dt);
 
         string ToString(string format);
-        void AssociateWith(IDateTime dt);        
+        //void AssociateWith(IDateTime dt);        
     }
 }

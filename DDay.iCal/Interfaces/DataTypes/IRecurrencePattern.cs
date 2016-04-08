@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -7,7 +8,7 @@ namespace DDay.iCal
         IEncodableDataType
     {
         FrequencyType Frequency { get; set; }
-        DateTime Until { get; set; }
+        ZonedDateTime Until { get; set; }
         int Count { get; set; }
         int Interval { get; set; }
         IList<int> BySecond { get; set; }

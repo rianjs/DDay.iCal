@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.Serialization;
 using System.Globalization;
-using System.Diagnostics;
 using DDay.Collections;
 
 namespace DDay.iCal
@@ -12,9 +11,7 @@ namespace DDay.iCal
 #if !SILVERLIGHT
     [Serializable]
 #endif
-    public partial class iCalTimeZone :
-        CalendarComponent,
-        ITimeZone
+    public partial class iCalTimeZone : CalendarComponent, ITimeZone
     {
         #region Static Public Methods
 
@@ -215,24 +212,6 @@ namespace DDay.iCal
         {
             get { return m_TimeZoneInfos; }
             set { m_TimeZoneInfos = value; }
-        }
-
-        /// <summary>
-        /// Retrieves the iCalTimeZoneInfo object that contains information
-        /// about the TimeZone, with the name of the current timezone,
-        /// offset from UTC, etc.
-        /// </summary>
-        /// <param name="dt">The iCalDateTime object for which to retrieve the iCalTimeZoneInfo.</param>
-        /// <returns>A TimeZoneInfo object for the specified iCalDateTime</returns>
-        virtual public TimeZoneObservance? GetTimeZoneObservance(IDateTime dt)
-        {
-            foreach (var tzi in TimeZoneInfos)
-            {
-                var observance = tzi.GetObservance(dt);
-                if (observance != null && observance.HasValue)
-                    return observance;
-            }
-            return null;
         }
 
         #endregion

@@ -25,10 +25,6 @@ namespace DDay.iCal
 
         #region Constructors
 
-        public Journal()
-        {            
-        }
-
         void Initialize()
         {
             this.Name = Components.JOURNAL;
@@ -38,13 +34,7 @@ namespace DDay.iCal
 
         #region Overrides
 
-        protected override bool EvaluationIncludesReferenceDate
-        {
-            get
-            {
-                return true;
-            }
-        }
+        protected override bool EvaluationIncludesReferenceDate => true;
 
         protected override void OnDeserializing(StreamingContext context)
         {

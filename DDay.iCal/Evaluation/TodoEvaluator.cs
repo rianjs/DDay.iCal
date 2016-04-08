@@ -80,7 +80,7 @@ namespace DDay.iCal
             else
             {
                 var dtVal = dt.Value;
-                IncrementDate(ref dtVal, recur, -recur.Interval);
+                GetNextOccurrence(ref dtVal, recur, -recur.Interval);
                 dt.Value = dtVal;
             }
         }

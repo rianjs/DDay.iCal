@@ -60,7 +60,7 @@ namespace DDay.iCal.Test
                 var dt = dateTimes[i];
                 Assert.AreEqual(dt, sortedOccurrences[i].Period.StartTime, "Event should occur on " + dt);
                 if (timeZones != null)
-                    Assert.AreEqual(timeZones[i], dt.TimeZoneName, "Event " + dt + " should occur in the " + timeZones[i] + " timezone");
+                    Assert.AreEqual(timeZones[i], dt.TZID, "Event " + dt + " should occur in the " + timeZones[i] + " timezone");
 
                 //// Now, verify that GetNextOccurrence() returns accurate results.
                 //if (i < dateTimes.Length - 1)
@@ -171,8 +171,8 @@ namespace DDay.iCal.Test
                 {
                     Assert.AreEqual(dt, sortedOccurrences[i].Period.StartTime, "Event should occur at " + dt);
                     Assert.IsTrue(
-                        (dt.LessThan(new iCalDateTime(1997, 10, 26, tzid)) && dt.TimeZoneName == "EDT") ||
-                        (dt.GreaterThan(new iCalDateTime(1997, 10, 26, tzid)) && dt.TimeZoneName == "EST"),
+                        (dt.LessThan(new iCalDateTime(1997, 10, 26, tzid)) && dt.TZID == "EDT") ||
+                        (dt.GreaterThan(new iCalDateTime(1997, 10, 26, tzid)) && dt.TZID == "EST"),
                         "Event " + dt + " doesn't occur in the correct time zone (including Daylight & Standard time zones)");
                     i++;
                 }

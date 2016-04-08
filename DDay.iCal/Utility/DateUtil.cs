@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.Net.Security;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -25,61 +27,31 @@ namespace DDay.iCal
             return StartOfDay(dt).AddDays(1).AddTicks(-1);
         }     
 
-        public static DateTime GetSimpleDateTimeData(IDateTime dt)
-        {
-            return DateTime.SpecifyKind(dt.Value, dt.IsUniversalTime ? DateTimeKind.Utc : DateTimeKind.Local);
-        }
-
         public static DateTime SimpleDateTimeToMatch(IDateTime dt, IDateTime toMatch)
         {
             if (toMatch.IsUniversalTime && dt.IsUniversalTime)
-                return dt.Value;
+                return dt.Value.ToDateTimeUtc();
             else if (toMatch.IsUniversalTime)
-                return dt.Value.ToUniversalTime();
+                return dt.Value.ToDateTimeUtc();
             else if (dt.IsUniversalTime)
-                return dt.Value.ToLocalTime();
+                return dt.Value.LocalDateTime.ToDateTimeUnspecified();  //If something breaks on this, it may need to be DateTimeKind.Local
             else
-                return dt.Value;
+                return dt.Value.ToDateTimeOffset().DateTime;
         }
 
         public static IDateTime MatchTimeZone(IDateTime dt1, IDateTime dt2)
         {
-            Debug.Assert(dt1 != null && dt2 != null);
+            if (dt1 == null || dt2 == null)
+            {
+                throw new ArgumentException("DateTimes may not be null");
+            }
 
             // Associate the date/time with the first.
-            var copy = dt2.Copy<IDateTime>();
-            copy.AssociateWith(dt1);
+            //copy.AssociateWith(dt1);
 
-            // If the dt1 time does not occur in the same time zone as the
-            // dt2 time, then let's convert it so they can be used in the
-            // same context (i.e. evaluation).
-            if (dt1.TZID != null)
-            {
-                if (!string.Equals(dt1.TZID, copy.TZID))
-                    return (dt1.TimeZoneObservance != null) ? copy.ToTimeZone(dt1.TimeZoneObservance.Value) : copy.ToTimeZone(dt1.TZID);
-                else return copy;
-            }
-            else if (dt1.IsUniversalTime)
-            {
-                // The first date/time is in UTC time, convert!
-                return new iCalDateTime(copy.UTC);
-            }
-            else
-            {
-                // The first date/time is in local time, convert!
-                return new iCalDateTime(copy.Local);
-            }
-        }
-
-        public static DateTime AddWeeks(DateTime dt, int interval, DayOfWeek firstDayOfWeek)
-        {
-            // NOTE: fixes WeeklyUntilWkst2() eval.
-            // NOTE: simplified the execution of this - fixes bug #3119920 - missing weekly occurences also
-            dt = dt.AddDays(interval * 7);
-            while (dt.DayOfWeek != firstDayOfWeek)
-                dt = dt.AddDays(-1);
-
-            return dt;
+            return string.Equals(dt1.TZID, dt2.TZID)    //Maybe associate with dt1?
+                ? new iCalDateTime(dt2.Value)
+                : new iCalDateTime(dt2.Value.WithZone(GetTimeZone(dt2.TZID)));
         }
 
         public static DateTime FirstDayOfWeek(DateTime dt, DayOfWeek firstDayOfWeek, out int offset)
@@ -91,6 +63,36 @@ namespace DDay.iCal
                 offset++;
             }
             return dt;
+        }
+
+        public static DateTimeZone GetTimeZone(string tzId)
+        {
+            var zone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(tzId) ?? DateTimeZoneProviders.Bcl.GetZoneOrNull(tzId);
+            if (zone != null)
+            {
+                return zone;
+            }
+
+            zone = DateTimeZoneProviders.Bcl.GetZoneOrNull(tzId);
+            if (zone != null)
+            {
+                return zone;
+            }
+
+            tzId = tzId.Replace("-", "/");
+            zone = DateTimeZoneProviders.Serialization.GetZoneOrNull(tzId);
+            if (zone != null)
+            {
+                return zone;
+            }
+            throw new ArgumentException($"{zone} is not a recognized time zone");
+        }
+
+        public static ZonedDateTime GetMidnight(ZonedDateTime dt)
+        {
+            var localDate = dt.Date;
+            var midnight = dt.Zone.AtStartOfDay(localDate);
+            return midnight;
         }
     }
 }

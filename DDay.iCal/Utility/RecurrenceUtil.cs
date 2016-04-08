@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -15,12 +16,11 @@ namespace DDay.iCal
         {
             return GetOccurrences(
                 recurrable, 
-                new iCalDateTime(dt.Local.Date), 
-                new iCalDateTime(dt.Local.Date.AddDays(1).AddSeconds(-1)),
-                includeReferenceDateInResults);
+                new iCalDateTime(DateUtil.GetMidnight(dt.Value)), 
+                new iCalDateTime(dt.Local.Plus(Duration.FromStandardDays(1).Minus(Duration.FromSeconds(1)))));
         }
 
-        static public HashSet<Occurrence> GetOccurrences(IRecurrable recurrable, IDateTime periodStart, IDateTime periodEnd, bool includeReferenceDateInResults)
+        static public HashSet<Occurrence> GetOccurrences(IRecurrable recurrable, IDateTime periodStart, IDateTime periodEnd)
         {
             var occurrences = new HashSet<Occurrence>();
 
@@ -39,8 +39,7 @@ namespace DDay.iCal
                 var periods = evaluator.Evaluate(
                     start,
                     DateUtil.GetSimpleDateTimeData(periodStart),
-                    DateUtil.GetSimpleDateTimeData(periodEnd),
-                    includeReferenceDateInResults);
+                    DateUtil.GetSimpleDateTimeData(periodEnd));
 
                 foreach (var p in periods)
                 {

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using NodaTime;
 
 namespace DDay.iCal
 {
-    public abstract class Evaluator :
-        IEvaluator
+    public abstract class Evaluator : IEvaluator
     {
         #region Private Fields
 
@@ -57,28 +57,45 @@ namespace DDay.iCal
         protected IDateTime ConvertToIDateTime(DateTime dt, IDateTime referenceDate)
         {
             IDateTime newDt = new iCalDateTime(dt, referenceDate.TZID);
-            newDt.AssociateWith(referenceDate);
+            //newDt.AssociateWith(referenceDate);
             return newDt;
         }
 
-        protected void IncrementDate(ref DateTime dt, IRecurrencePattern pattern, int interval)
+        protected ZonedDateTime GetNextOccurrence(ZonedDateTime zonedDateTime, IRecurrencePattern pattern, int interval)
         {
-            // FIXME: use a more specific exception.
-            if (interval == 0)
-                throw new Exception("Cannot evaluate with an interval of zero.  Please use an interval other than zero.");
+            if (interval <= 0)
+            {
+                throw new ArgumentException($"Interval units must be greater than 0. You entered {interval}");
+            }
 
-            var old = dt;
             switch (pattern.Frequency)
             {
-                case FrequencyType.Secondly: dt = old.AddSeconds(interval); break;
-                case FrequencyType.Minutely: dt = old.AddMinutes(interval); break;
-                case FrequencyType.Hourly: dt = old.AddHours(interval); break;
-                case FrequencyType.Daily: dt = old.AddDays(interval); break;
-                case FrequencyType.Weekly: dt = DateUtil.AddWeeks(old, interval, pattern.FirstDayOfWeek); break;
-                case FrequencyType.Monthly: dt = old.AddDays(-old.Day + 1).AddMonths(interval); break;
-                case FrequencyType.Yearly: dt = old.AddDays(-old.DayOfYear + 1).AddYears(interval); break;
-                // FIXME: use a more specific exception.
-                default: throw new Exception("FrequencyType.NONE cannot be evaluated. Please specify a FrequencyType before evaluating the recurrence.");
+                case FrequencyType.Secondly:
+                    return zonedDateTime.Plus(Duration.FromSeconds(interval));
+                case FrequencyType.Minutely:
+                    return zonedDateTime.Plus(Duration.FromMinutes(interval));
+                case FrequencyType.Hourly:
+                    return zonedDateTime.Plus(Duration.FromHours(interval));
+                case FrequencyType.Daily:
+                    return zonedDateTime.Plus(Duration.FromStandardDays(interval));
+                case FrequencyType.Weekly:
+                    return zonedDateTime.Plus(Duration.FromStandardWeeks(interval));
+                case FrequencyType.Monthly:
+                {
+                    var nextDate = zonedDateTime.Date.PlusMonths(interval);
+                    var exactTimeOfNextOccurrence = new LocalDateTime(nextDate.Year, nextDate.Month, nextDate.Day, zonedDateTime.TimeOfDay.Hour,
+                        zonedDateTime.Minute, zonedDateTime.Second);
+                    return new ZonedDateTime(exactTimeOfNextOccurrence, zonedDateTime.Zone, zonedDateTime.Offset);
+                }
+                case FrequencyType.Yearly:
+                {
+                    var nextDate = zonedDateTime.Date.PlusYears(interval);
+                    var exactTimeOfNextOccurrence = new LocalDateTime(nextDate.Year, nextDate.Month, nextDate.Day, zonedDateTime.TimeOfDay.Hour,
+                        zonedDateTime.Minute, zonedDateTime.Second);
+                    return new ZonedDateTime(exactTimeOfNextOccurrence, zonedDateTime.Zone, zonedDateTime.Offset);
+                }
+                default:
+                    throw new ArgumentException("FrequencyType.NONE cannot be evaluated. Please specify a FrequencyType before evaluating the recurrence.");
             }
         }
 

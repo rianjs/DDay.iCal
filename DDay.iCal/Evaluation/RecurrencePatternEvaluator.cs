@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -43,9 +44,7 @@ namespace DDay.iCal
     /// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     /// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     /// </summary>
-
-    public class RecurrencePatternEvaluator :
-        Evaluator
+    public class RecurrencePatternEvaluator : Evaluator
     {
         // FIXME: in ical4j this is configurable.
         private static int maxIncrementCount = 1000;
@@ -129,83 +128,6 @@ namespace DDay.iCal
             return r;
         }
 
-        private void EnforceEvaluationRestrictions(IRecurrencePattern pattern)
-        {
-            RecurrenceEvaluationModeType? evaluationMode = pattern.EvaluationMode;
-            RecurrenceRestrictionType? evaluationRestriction = pattern.RestrictionType;
-
-            if (evaluationRestriction != RecurrenceRestrictionType.NoRestriction)
-            {
-                switch (evaluationMode)
-                {
-                    case RecurrenceEvaluationModeType.AdjustAutomatically:
-                        switch (pattern.Frequency)
-                        {
-                            case FrequencyType.Secondly:
-                                {
-                                    switch (evaluationRestriction)
-                                    {
-                                        case RecurrenceRestrictionType.Default:
-                                        case RecurrenceRestrictionType.RestrictSecondly: pattern.Frequency = FrequencyType.Minutely; break;
-                                        case RecurrenceRestrictionType.RestrictMinutely: pattern.Frequency = FrequencyType.Hourly; break;
-                                        case RecurrenceRestrictionType.RestrictHourly: pattern.Frequency = FrequencyType.Daily; break;
-                                    }
-                                } break;
-                            case FrequencyType.Minutely:
-                                {
-                                    switch (evaluationRestriction)
-                                    {
-                                        case RecurrenceRestrictionType.RestrictMinutely: pattern.Frequency = FrequencyType.Hourly; break;
-                                        case RecurrenceRestrictionType.RestrictHourly: pattern.Frequency = FrequencyType.Daily; break;
-                                    }
-                                } break;
-                            case FrequencyType.Hourly:
-                                {
-                                    switch (evaluationRestriction)
-                                    {
-                                        case RecurrenceRestrictionType.RestrictHourly: pattern.Frequency = FrequencyType.Daily; break;
-                                    }
-                                } break;
-                            default: break;
-                        } break;
-                    case RecurrenceEvaluationModeType.ThrowException:
-                    case RecurrenceEvaluationModeType.Default:
-                        switch (pattern.Frequency)
-                        {
-                            case FrequencyType.Secondly:
-                                {
-                                    switch (evaluationRestriction)
-                                    {
-                                        case RecurrenceRestrictionType.Default:
-                                        case RecurrenceRestrictionType.RestrictSecondly:
-                                        case RecurrenceRestrictionType.RestrictMinutely:
-                                        case RecurrenceRestrictionType.RestrictHourly:
-                                            throw new EvaluationEngineException();
-                                    }
-                                } break;
-                            case FrequencyType.Minutely:
-                                {
-                                    switch (evaluationRestriction)
-                                    {
-                                        case RecurrenceRestrictionType.RestrictMinutely:
-                                        case RecurrenceRestrictionType.RestrictHourly:
-                                            throw new EvaluationEngineException();
-                                    }
-                                } break;
-                            case FrequencyType.Hourly:
-                                {
-                                    switch (evaluationRestriction)
-                                    {
-                                        case RecurrenceRestrictionType.RestrictHourly:
-                                            throw new EvaluationEngineException();
-                                    }
-                                } break;
-                            default: break;
-                        } break;
-                }
-            }
-        }
-
         /**
          * Returns a list of start dates in the specified period represented by this recur. This method includes a base date
          * argument, which indicates the start of the fist occurrence of this recurrence. The base date is used to inject
@@ -213,25 +135,22 @@ namespace DDay.iCal
          * Wed, Mar 23, 12:19PM, but the recurrence is Mon - Fri, 9:00AM - 5:00PM, the start dates returned should all be at
          * 9:00AM, and not 12:19PM.
          */
-        private HashSet<DateTime> GetDates(IDateTime seed, DateTime periodStart, DateTime periodEnd, int maxCount, IRecurrencePattern pattern, bool includeReferenceDateInResults)
+        private HashSet<ZonedDateTime> GetDates(IDateTime seed, ZonedDateTime periodStart, ZonedDateTime periodEnd, int maxCount, IRecurrencePattern pattern)
         {            
-            var dates = new HashSet<DateTime>();
-            var originalDate = DateUtil.GetSimpleDateTimeData(seed);
-            var seedCopy = DateUtil.GetSimpleDateTimeData(seed);
+            var dates = new HashSet<ZonedDateTime>();
 
-            if (includeReferenceDateInResults)
-                dates.Add(seedCopy);
+            //if (includeReferenceDateInResults)
+            //    dates.Add(seedCopy);
 
             // optimize the start time for selecting candidates
             // (only applicable where a COUNT is not specified)
             if (pattern.Count == int.MinValue)
             {
-                var incremented = seedCopy;
-                IncrementDate(ref incremented, pattern, pattern.Interval);
+                var incremented = GetNextOccurrence(seed.Value, pattern, pattern.Interval);
                 while (incremented < periodStart)
                 {
-                    seedCopy = incremented;
-                    IncrementDate(ref incremented, pattern, pattern.Interval);
+                    seed = incremented;
+                    incremented = GetNextOccurrence(incremented, pattern, pattern.Interval);
                 }
             }
 
@@ -294,7 +213,7 @@ namespace DDay.iCal
                         break;
                 }
 
-                IncrementDate(ref seedCopy, pattern, pattern.Interval);
+                GetNextOccurrence(ref seedCopy, pattern, pattern.Interval);
             }
 
             // sort final list..
@@ -973,16 +892,13 @@ namespace DDay.iCal
 
         #region Private Methods
 
-        IPeriod CreatePeriod(DateTime dt, IDateTime referenceDate)
+        IPeriod CreatePeriod(ZonedDateTime dt, IDateTime referenceDate)
         {
             // Turn each resulting date/time into an IDateTime and associate it
             // with the reference date.
             IDateTime newDt = new iCalDateTime(dt, referenceDate.TZID);
 
-            // NOTE: fixes bug #2938007 - hasTime missing
-            newDt.HasTime = referenceDate.HasTime;
-
-            newDt.AssociateWith(referenceDate);
+            //newDt.AssociateWith(referenceDate);
 
             // Create a period from the new date/time.
             return new Period(newDt);
@@ -1015,17 +931,15 @@ namespace DDay.iCal
             // Create a recurrence pattern suitable for use during evaluation.
             var pattern = ProcessRecurrencePattern(referenceDate);
 
-            // Enforce evaluation restrictions on the pattern.
-            EnforceEvaluationRestrictions(pattern);
-
             Periods.Clear();
             //Periods = new HashSet<IPeriod>();
+            var dates = GetDates(referenceDate, periodStart, periodEnd, -1, pattern);
 
-            foreach (var dt in GetDates(referenceDate, periodStart, periodEnd, -1, pattern, includeReferenceDateInResults))
+            foreach (var dt in dates)
             {                
                 // Create a period from the date/time.
                 var p = CreatePeriod(dt, referenceDate);
-                
+
                 if (!Periods.Contains(p))
                     Periods.Add(p);
             }

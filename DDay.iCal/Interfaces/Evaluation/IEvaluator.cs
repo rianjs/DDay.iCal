@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -17,13 +18,13 @@ namespace DDay.iCal
         /// what time frames have already been evaluated, so
         /// duplicate evaluation doesn't occur.
         /// </summary>
-        DateTime EvaluationStartBounds { get; }
+        ZonedDateTime EvaluationStartBounds { get; }
 
         /// <summary>
         /// The end bounds of the evaluation.
         /// See <see cref="EvaluationStartBounds"/> for more info.
         /// </summary>
-        DateTime EvaluationEndBounds { get; }
+        ZonedDateTime EvaluationEndBounds { get; }
 
         /// <summary>
         /// Gets a list of periods collected so far during
@@ -67,6 +68,6 @@ namespace DDay.iCal
         ///     A list of <see cref="System.DateTime"/> objects for
         ///     each date/time when this item occurs/recurs.
         /// </returns>
-        HashSet<IPeriod> Evaluate(IDateTime referenceDate, DateTime periodStart, DateTime periodEnd, bool includeReferenceDateInResults);
+        HashSet<IPeriod> Evaluate(IDateTime referenceDate, ZonedDateTime periodStart, ZonedDateTime periodEnd);
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -30,13 +31,13 @@ namespace DDay.iCal
             return occurrences;
         }
 
-        public HashSet<Occurrence> GetOccurrences(DateTime dt)
-        {
-            var occurrences = new HashSet<Occurrence>();
-            foreach (var iCal in this)
-                occurrences.UnionWith(iCal.GetOccurrences(dt));
-            return occurrences;
-        }
+        //public HashSet<Occurrence> GetOccurrences(DateTime dt)
+        //{
+        //    var occurrences = new HashSet<Occurrence>();
+        //    foreach (var iCal in this)
+        //        occurrences.UnionWith(iCal.GetOccurrences(dt));
+        //    return occurrences;
+        //}
 
         public HashSet<Occurrence> GetOccurrences(IDateTime startTime, IDateTime endTime)
         {
@@ -46,7 +47,7 @@ namespace DDay.iCal
             return occurrences;
         }
 
-        public HashSet<Occurrence> GetOccurrences(DateTime startTime, DateTime endTime)
+        public HashSet<Occurrence> GetOccurrences(ZonedDateTime startTime, ZonedDateTime endTime)
         {
             var occurrences = new HashSet<Occurrence>();
             foreach (var iCal in this)
