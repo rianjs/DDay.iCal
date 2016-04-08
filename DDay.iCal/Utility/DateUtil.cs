@@ -27,16 +27,23 @@ namespace DDay.iCal
             return StartOfDay(dt).AddDays(1).AddTicks(-1);
         }     
 
-        public static DateTime SimpleDateTimeToMatch(IDateTime dt, IDateTime toMatch)
+        public static ZonedDateTime SimpleDateTimeToMatch(IDateTime dt, IDateTime toMatch)
         {
-            if (toMatch.IsUniversalTime && dt.IsUniversalTime)
-                return dt.Value.ToDateTimeUtc();
-            else if (toMatch.IsUniversalTime)
-                return dt.Value.ToDateTimeUtc();
-            else if (dt.IsUniversalTime)
-                return dt.Value.LocalDateTime.ToDateTimeUnspecified();  //If something breaks on this, it may need to be DateTimeKind.Local
-            else
-                return dt.Value.ToDateTimeOffset().DateTime;
+            return dt.Value.Zone.Equals(toMatch.Value.Zone)
+                ? toMatch.Value
+                : toMatch.Value.WithZone(dt.Value.Zone);
+            //else if (toMatch.IsUniversalTime)
+            //{
+            //    return dt.Value.WithZone(DateTimeZone.Utc);
+            //}
+            //else if (dt.IsUniversalTime)
+            //{
+            //    return dt.Value.LocalDateTime.ToDateTimeUnspecified(); //If something breaks on this, it may need to be DateTimeKind.Local
+            //}
+            //else
+            //{
+            //    return dt.Value.ToDateTimeOffset().DateTime;
+            //}
         }
 
         public static IDateTime MatchTimeZone(IDateTime dt1, IDateTime dt2)
@@ -93,6 +100,14 @@ namespace DDay.iCal
             var localDate = dt.Date;
             var midnight = dt.Zone.AtStartOfDay(localDate);
             return midnight;
+        }
+
+        public static ZonedDateTime AddYears(ZonedDateTime zonedDateTime, int years)
+        {
+            var futureDate = zonedDateTime.Date.PlusYears(years);
+            var localTime = zonedDateTime.TimeOfDay;
+            var localDt = new LocalDateTime(futureDate.Year, futureDate.Month, futureDate.Day, localTime.Hour, localTime.Minute, localTime.Second);
+            return new ZonedDateTime(localDt, zonedDateTime.Zone, zonedDateTime.Offset);
         }
     }
 }

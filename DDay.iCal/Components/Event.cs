@@ -227,44 +227,6 @@ namespace DDay.iCal
         #region Public Methods
 
         /// <summary>
-        /// Use this method to determine if an event occurs on a given date.
-        /// <note type="caution">
-        ///     This event should be called only after the Evaluate
-        ///     method has calculated the dates for which this event occurs.
-        /// </note>
-        /// </summary>
-        /// <param name="DateTime">The date to test.</param>
-        /// <returns>True if the event occurs on the <paramref name="DateTime"/> provided, False otherwise.</returns>
-        virtual public bool OccursOn(IDateTime DateTime)
-        {
-            foreach (var p in m_Evaluator.Periods)
-                // NOTE: removed UTC from date checks, since a date is a date.
-                if (p.StartTime.Date == DateTime.Date ||    // It's the start date OR
-                    (p.StartTime.Date <= DateTime.Date &&   // It's after the start date AND
-                    (p.EndTime.HasTime && p.EndTime.Date >= DateTime.Date || // an end time was specified, and it's after the test date
-                    (!p.EndTime.HasTime && p.EndTime.Date > DateTime.Date)))) // an end time was not specified, and it's before the end date
-                    // NOTE: fixed bug as follows:
-                    // DTSTART;VALUE=DATE:20060704
-                    // DTEND;VALUE=DATE:20060705
-                    // Event.OccursOn(new iCalDateTime(2006, 7, 5)); // Evals to true; should be false
-                    return true;
-            return false;
-        }
-
-        /// <summary>
-        /// Use this method to determine if an event begins at a given date and time.
-        /// </summary>
-        /// <param name="DateTime">The date and time to test.</param>
-        /// <returns>True if the event begins at the given date and time</returns>
-        virtual public bool OccursAt(IDateTime DateTime)
-        {
-            foreach (var p in m_Evaluator.Periods)
-                if (p.StartTime.Equals(DateTime))
-                    return true;
-            return false;
-        }
-
-        /// <summary>
         /// Determines whether or not the <see cref="Event"/> is actively displayed
         /// as an upcoming or occurred event.
         /// </summary>

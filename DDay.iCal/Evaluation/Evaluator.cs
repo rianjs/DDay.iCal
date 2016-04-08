@@ -9,8 +9,8 @@ namespace DDay.iCal
         #region Private Fields
 
         private System.Globalization.Calendar m_Calendar;
-        private DateTime m_EvaluationStartBounds = DateTime.MaxValue;
-        private DateTime m_EvaluationEndBounds = DateTime.MinValue;
+        private ZonedDateTime m_EvaluationStartBounds = DateTime.MaxValue;
+        private ZonedDateTime m_EvaluationEndBounds = DateTime.MinValue;
         
         private ICalendarObject m_AssociatedObject;
         private ICalendarDataType m_AssociatedDataType;
@@ -53,13 +53,6 @@ namespace DDay.iCal
         #endregion
 
         #region Protected Methods
-
-        protected IDateTime ConvertToIDateTime(DateTime dt, IDateTime referenceDate)
-        {
-            IDateTime newDt = new iCalDateTime(dt, referenceDate.TZID);
-            //newDt.AssociateWith(referenceDate);
-            return newDt;
-        }
 
         protected ZonedDateTime GetNextOccurrence(ZonedDateTime zonedDateTime, IRecurrencePattern pattern, int interval)
         {
@@ -108,31 +101,9 @@ namespace DDay.iCal
             get { return m_Calendar; }
         }
 
-        virtual public DateTime EvaluationStartBounds
-        {
-            get { return m_EvaluationStartBounds; }
-            set { m_EvaluationStartBounds = value; }
-        }
+        virtual public ZonedDateTime EvaluationStartBounds { get; set; }
 
-        virtual public DateTime EvaluationEndBounds
-        {
-            get { return m_EvaluationEndBounds; }
-            set { m_EvaluationEndBounds = value; }
-        }
-
-        virtual public ICalendarObject AssociatedObject
-        {
-            get
-            {
-                if (m_AssociatedObject != null)
-                    return m_AssociatedObject;
-                else if (m_AssociatedDataType != null)
-                    return m_AssociatedDataType.AssociatedObject;
-                else
-                    return null;
-            }
-            protected set { m_AssociatedObject = value; }
-        }
+        virtual public ZonedDateTime EvaluationEndBounds { get; set; }
 
         virtual public HashSet<IPeriod> Periods
         {
@@ -141,15 +112,15 @@ namespace DDay.iCal
 
         virtual public void Clear()
         {
-            m_EvaluationStartBounds = DateTime.MaxValue;
-            m_EvaluationEndBounds = DateTime.MinValue;
+            m_EvaluationStartBounds = new ZonedDateTime(Instant.MaxValue, m_EvaluationStartBounds.Zone);
+            m_EvaluationEndBounds = new ZonedDateTime(Instant.MinValue, m_EvaluationEndBounds.Zone);
             m_Periods.Clear();
         }
 
         abstract public HashSet<IPeriod> Evaluate(
             IDateTime referenceDate,
-            DateTime periodStart,
-            DateTime periodEnd,
+            ZonedDateTime periodStart,
+            ZonedDateTime periodEnd,
             bool includeReferenceDateInResults);
 
         #endregion

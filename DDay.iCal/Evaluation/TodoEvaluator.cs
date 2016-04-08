@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -54,7 +55,7 @@ namespace DDay.iCal
                     DetermineStartingRecurrence(exdate, ref beginningDate);
             }
 
-            Evaluate(Todo.Start, DateUtil.GetSimpleDateTimeData(beginningDate), DateUtil.GetSimpleDateTimeData(currDt).AddTicks(1), true);
+            Evaluate(Todo.Start, beginningDate.Value, currDt.Value.Plus(Duration.FromTicks(1)));
         }
 
         public void DetermineStartingRecurrence(IPeriodList rdate, ref IDateTime dt)
@@ -89,12 +90,12 @@ namespace DDay.iCal
 
         #region Overrides
 
-        public override HashSet<IPeriod> Evaluate(IDateTime referenceDate, DateTime periodStart, DateTime periodEnd, bool includeReferenceDateInResults)
+        public override HashSet<IPeriod> Evaluate(IDateTime referenceDate, ZonedDateTime periodStart, ZonedDateTime periodEnd)
         {
             // TODO items can only recur if a start date is specified
             if (Todo.Start != null)
             {
-                base.Evaluate(referenceDate, periodStart, periodEnd, includeReferenceDateInResults);
+                base.Evaluate(referenceDate, periodStart, periodEnd);
 
                 // Ensure each period has a duration
                 foreach (var period in Periods.Where(period => period.EndTime == null))

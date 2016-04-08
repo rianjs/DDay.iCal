@@ -276,41 +276,6 @@ namespace DDay.iCal.Test
             Assert.AreEqual(TimeSpan.FromHours(-1) + TimeSpan.FromSeconds(1), result);            
         }
 
-        /// <summary>
-        /// Ensures the AddTimeZone() method works as expected.
-        /// </summary>
-        //[Test]     //Broken in dday
-        public void SystemTimeZone2()
-        {
-            var tzi = System.TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
-            Assert.IsNotNull(tzi);
-
-            var iCal = new iCalendar();
-            var tz = iCal.AddTimeZone(tzi, new DateTime(2000, 1, 1), false);
-            Assert.IsNotNull(tz);
-
-            var serializer = new iCalendarSerializer();
-            serializer.Serialize(iCal, @"Calendars\Serialization\SystemTimeZone2.ics");
-
-            // Ensure the time zone transition works as expected
-            // (i.e. it takes 1 hour and 1 second to transition from
-            // 2003-10-26 12:59:59 AM to
-            // 2003-10-26 01:00:00 AM)
-            var dt1 = new iCalDateTime(2003, 10, 26, 0, 59, 59, tz.TZID, iCal);
-            var dt2 = new iCalDateTime(2003, 10, 26, 1, 0, 0, tz.TZID, iCal);
-            var result = dt2 - dt1;
-            Assert.AreEqual(TimeSpan.FromHours(1) + TimeSpan.FromSeconds(1), result);
-
-            // Ensure another time zone transition works as expected
-            // (i.e. it takes negative 59 minutes and 59 seconds to transition from
-            // 2004-04-04 01:59:59 AM to
-            // 2004-04-04 02:00:00 AM)
-            dt1 = new iCalDateTime(2004, 4, 4, 1, 59, 59, tz.TZID, iCal);
-            dt2 = new iCalDateTime(2004, 4, 4, 2, 0, 0, tz.TZID, iCal);
-            result = dt2 - dt1;
-            Assert.AreEqual(TimeSpan.FromHours(-1) + TimeSpan.FromSeconds(1), result);
-        }
-
         [Test]
         public void SystemTimeZone3()
         {

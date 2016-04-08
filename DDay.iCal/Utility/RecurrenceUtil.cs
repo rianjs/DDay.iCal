@@ -36,10 +36,7 @@ namespace DDay.iCal
                 periodStart = DateUtil.MatchTimeZone(start, periodStart);
                 periodEnd = DateUtil.MatchTimeZone(start, periodEnd);
 
-                var periods = evaluator.Evaluate(
-                    start,
-                    DateUtil.GetSimpleDateTimeData(periodStart),
-                    DateUtil.GetSimpleDateTimeData(periodEnd));
+                var periods = evaluator.Evaluate(start, periodStart.Value, periodEnd.Value);
 
                 foreach (var p in periods)
                 {

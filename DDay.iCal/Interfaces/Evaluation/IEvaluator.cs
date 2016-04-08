@@ -33,11 +33,6 @@ namespace DDay.iCal
         HashSet<IPeriod> Periods { get; }
 
         /// <summary>
-        /// Gets the object associated with this evaluator.
-        /// </summary>
-        ICalendarObject AssociatedObject { get; }
-
-        /// <summary>
         /// Clears the evaluation, eliminating all data that has
         /// been collected up to this point.  Since this data is cached
         /// as needed, this method can be useful to gather information

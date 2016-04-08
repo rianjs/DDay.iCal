@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using NodaTime;
 
 namespace DDay.iCal
 {
-    public class TimeZoneEvaluator :
-        Evaluator
+    public class TimeZoneEvaluator : Evaluator
     {
         #region Private Fields
 
@@ -69,9 +69,9 @@ namespace DDay.iCal
                     ? (Occurrence?)sortedOccurrences[i + 1]
                     : null;
 
-                sortedOccurrences[i].Period.EndTime = next != null && next.HasValue
+                sortedOccurrences[i].Period.EndTime = next.HasValue
                     ? next.Value.Period.StartTime.AddTicks(-1)
-                    : ConvertToIDateTime(EvaluationEndBounds, referenceDate);
+                    : new iCalDateTime(EvaluationEndBounds, referenceDate);
             }
 
             //for (var i = 0; i < m_Occurrences.Count; i++)
@@ -105,7 +105,7 @@ namespace DDay.iCal
             m_Occurrences.Clear();
         }
 
-        public override HashSet<IPeriod> Evaluate(IDateTime referenceDate, DateTime periodStart, DateTime periodEnd, bool includeReferenceDateInResults)
+        public override HashSet<IPeriod> Evaluate(IDateTime referenceDate, ZonedDateTime periodStart, ZonedDateTime periodEnd, bool includeReferenceDateInResults)
         {
             // Ensure the reference date is associated with the time zone
             if (referenceDate.AssociatedObject == null)
@@ -114,16 +114,14 @@ namespace DDay.iCal
             var infos = new List<ITimeZoneInfo>(TimeZone.TimeZoneInfos);
 
             // Evaluate extra time periods, without re-evaluating ones that were already evaluated
-            if ((EvaluationStartBounds == DateTime.MaxValue && EvaluationEndBounds == DateTime.MinValue) ||
+            if ((EvaluationStartBounds.ToInstant() == Instant.MaxValue && EvaluationEndBounds.ToInstant() == Instant.MinValue) ||
                 (periodEnd.Equals(EvaluationStartBounds)) ||
                 (periodStart.Equals(EvaluationEndBounds)))
             {
                 foreach (var curr in infos)
                 {
+                    //ToDo: This may be unnecessary, since we're not normalizing to UTC
                     var evaluator = curr.GetService(typeof(IEvaluator)) as IEvaluator;
-                    Debug.Assert(curr.Start != null, "TimeZoneInfo.Start must not be null.");
-                    Debug.Assert(curr.Start.TZID == null, "TimeZoneInfo.Start must not have a time zone reference.");
-                    Debug.Assert(evaluator != null, "TimeZoneInfo.GetService(typeof(IEvaluator)) must not be null.");
 
                     // Time zones must include an effective start date/time
                     // and must provide an evaluator.
@@ -131,31 +129,23 @@ namespace DDay.iCal
                     {
                         // Set the start bounds
                         if (EvaluationStartBounds > periodStart)
+                        {
                             EvaluationStartBounds = periodStart;
+                        }
 
                         // FIXME: 5 years is an arbitrary number, to eliminate the need
                         // to recalculate time zone information as much as possible.
-                        var offsetEnd = periodEnd.AddYears(5); 
+                        var offsetEnd = DateUtil.AddYears(periodEnd, 5);
 
-                        // Determine the UTC occurrences of the Time Zone observances
-                        var periods = evaluator.Evaluate(
-                            referenceDate,
-                            periodStart,
-                            offsetEnd,
-                            includeReferenceDateInResults);
+                        // Determine the occurrences of the Time Zone observances
+                        var periods = evaluator.Evaluate(referenceDate, periodStart, offsetEnd);
+                        Periods.UnionWith(periods);
+                        m_Occurrences.UnionWith(periods.Select(period => new Occurrence(curr, period)));
 
-                        foreach (var period in periods)
+                        if (EvaluationEndBounds.ToInstant() == Instant.MinValue || EvaluationEndBounds < offsetEnd)
                         {
-                            if (!Periods.Contains(period))
-                                Periods.Add(period);
-
-                            var o = new Occurrence(curr, period);
-                            if (!m_Occurrences.Contains(o))
-                                m_Occurrences.Add(o);
-                        }
-
-                        if (EvaluationEndBounds == DateTime.MinValue || EvaluationEndBounds < offsetEnd)
                             EvaluationEndBounds = offsetEnd;
+                        }
                     }
                 }
                 
@@ -163,8 +153,10 @@ namespace DDay.iCal
             }
             else
             {
-                if (EvaluationEndBounds != DateTime.MinValue && periodEnd > EvaluationEndBounds)
+                if (EvaluationEndBounds.ToInstant() != Instant.MinValue && periodEnd > EvaluationEndBounds)
+                {
                     Evaluate(referenceDate, EvaluationEndBounds, periodEnd, includeReferenceDateInResults);
+                }
             }
 
             return Periods;

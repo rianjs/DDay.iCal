@@ -3186,7 +3186,7 @@ namespace DDay.iCal.Test
             // Add the exception dates
             var periods = evaluator.Evaluate(
                 evtStart,
-                DateUtil.GetSimpleDateTimeData(evtStart), 
+                evtStart.Value, 
                 DateUtil.SimpleDateTimeToMatch(evtEnd, evtStart),
                 false)
                 .OrderBy(p => p.StartTime)

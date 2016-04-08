@@ -171,9 +171,10 @@ namespace DDay.iCal
         {
             if (Status == TodoStatus.Completed)
             {
-                if (Completed == null ||
-                    Completed.GreaterThan(currDt))
+                if (Completed == null || Completed.GreaterThan(currDt))
+                {
                     return true;
+                }
 
                 // Evaluate to the previous occurrence.
                 m_Evaluator.EvaluateToPreviousOccurrence(Completed, currDt);
@@ -181,8 +182,10 @@ namespace DDay.iCal
                 foreach (Period p in m_Evaluator.Periods)
                 {
                     if (p.StartTime.GreaterThan(Completed) && // The item has recurred after it was completed
-                        currDt.GreaterThanOrEqual(p.StartTime))     // and the current date is after or on the recurrence date.
+                        currDt.GreaterThanOrEqual(p.StartTime)) // and the current date is after or on the recurrence date.
+                    {
                         return false;
+                    }
                 }
                 return true;
             }

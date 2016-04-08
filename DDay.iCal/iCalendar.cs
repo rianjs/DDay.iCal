@@ -586,113 +586,14 @@ namespace DDay.iCal
         }
 
         /// <summary>
-        /// Adds a time zone to the iCalendar.  This time zone may
-        /// then be used in date/time objects contained in the 
-        /// calendar.
-        /// </summary>        
-        /// <returns>The time zone added to the calendar.</returns>
-        public ITimeZone AddTimeZone(ITimeZone tz)
-        {
-            this.AddChild(tz);
-            return tz;
-        }
-
-#if !SILVERLIGHT
-        /// <summary>
-        /// Adds a system time zone to the iCalendar.  This time zone may
-        /// then be used in date/time objects contained in the 
-        /// calendar.
-        /// </summary>
-        /// <param name="tzi">A System.TimeZoneInfo object to add to the calendar.</param>
-        /// <returns>The time zone added to the calendar.</returns>
-        public ITimeZone AddTimeZone(System.TimeZoneInfo tzi)
-        {
-            ITimeZone tz = iCalTimeZone.FromSystemTimeZone(tzi);
-            this.AddChild(tz);
-            return tz;
-        }
-
-        public ITimeZone AddTimeZone(System.TimeZoneInfo tzi, DateTime earliestDateTimeToSupport, bool includeHistoricalData)
-        {
-            ITimeZone tz = iCalTimeZone.FromSystemTimeZone(tzi, earliestDateTimeToSupport, includeHistoricalData);
-            this.AddChild(tz);
-            return tz;
-        }
-
-        /// <summary>
-        /// Adds the local system time zone to the iCalendar.  
-        /// This time zone may then be used in date/time
-        /// objects contained in the calendar.
-        /// </summary>
-        /// <returns>The time zone added to the calendar.</returns>
-        public ITimeZone AddLocalTimeZone()
-        {
-            ITimeZone tz = iCalTimeZone.FromLocalTimeZone();
-            this.AddChild(tz);
-            return tz;
-        }
-
-        public ITimeZone AddLocalTimeZone(DateTime earliestDateTimeToSupport, bool includeHistoricalData)
-        {
-            ITimeZone tz = iCalTimeZone.FromLocalTimeZone(earliestDateTimeToSupport, includeHistoricalData);
-            this.AddChild(tz);
-            return tz;
-        }
-#endif
-
-        /// <summary>
-        /// Retrieves the TimeZone object for the specified TZID (Time Zone Identifier).
-        /// </summary>
-        /// <param name="tzid">A valid TZID object, or a valid TZID string.</param>
-        /// <returns>A <see cref="TimeZone"/> object for the TZID.</returns>
-        public ITimeZone GetTimeZone(string tzid)
-        {
-            foreach (var tz in TimeZones)
-            {
-                if (tz.TZID.Equals(tzid))
-                {
-                    return tz;
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Evaluates component recurrences for the given range of time.
-        /// <example>
-        ///     For example, if you are displaying a month-view for January 2007,
-        ///     you would want to evaluate recurrences for Jan. 1, 2007 to Jan. 31, 2007
-        ///     to display relevant information for those dates.
-        /// </example>
-        /// </summary>
-        /// <param name="FromDate">The beginning date/time of the range to test.</param>
-        /// <param name="ToDate">The end date/time of the range to test.</param>
-        [Obsolete("This method is no longer supported.  Use GetOccurrences() instead.")]
-        public void Evaluate(IDateTime FromDate, IDateTime ToDate)
-        {
-            throw new NotSupportedException("Evaluate() is no longer supported as a public method.  Use GetOccurrences() instead.");
-        }
-
-        /// <summary>
-        /// Evaluates component recurrences for the given range of time, for
-        /// the type of recurring component specified.
-        /// </summary>
-        /// <typeparam name="T">The type of component to be evaluated for recurrences.</typeparam>
-        /// <param name="FromDate">The beginning date/time of the range to test.</param>
-        /// <param name="ToDate">The end date/time of the range to test.</param>
-        [Obsolete("This method is no longer supported.  Use GetOccurrences() instead.")]
-        public void Evaluate<T>(IDateTime FromDate, IDateTime ToDate)
-        {
-            throw new NotSupportedException("Evaluate() is no longer supported as a public method.  Use GetOccurrences() instead.");
-        }
-
-        /// <summary>
         /// Clears recurrence evaluations for recurring components.        
         /// </summary>        
         public void ClearEvaluation()
         {
             foreach (var recurrable in RecurringItems)
+            {
                 recurrable.ClearEvaluation();
+            }
         }
 
         /// <summary>
@@ -704,14 +605,14 @@ namespace DDay.iCal
         virtual public HashSet<Occurrence> GetOccurrences(IDateTime dt)
         {
             return GetOccurrences<IRecurringComponent>(
-                new iCalDateTime(dt.Local),
+                new iCalDateTime(DateUtil.GetMidnight(dt.Local)),
                 new iCalDateTime(dt.Local.Plus(Duration.FromStandardDays(1)).Minus(Duration.FromSeconds(-1))));
         }
-        virtual public HashSet<Occurrence> GetOccurrences(DateTime dt)
+        virtual public HashSet<Occurrence> GetOccurrences(ZonedDateTime dt)
         {
             return GetOccurrences<IRecurringComponent>(
-                new iCalDateTime(dt.Date),
-                new iCalDateTime(dt.Date.AddDays(1).AddSeconds(-1)));
+                new iCalDateTime(DateUtil.GetMidnight(dt)),
+                new iCalDateTime(dt.Plus(Duration.FromStandardDays(1).Minus(Duration.FromSeconds(1)))));
         }
 
         /// <summary>
@@ -725,7 +626,7 @@ namespace DDay.iCal
         {
             return GetOccurrences<IRecurringComponent>(startTime, endTime);
         }
-        virtual public HashSet<Occurrence> GetOccurrences(DateTime startTime, DateTime endTime)
+        virtual public HashSet<Occurrence> GetOccurrences(ZonedDateTime startTime, ZonedDateTime endTime)
         {
             return GetOccurrences<IRecurringComponent>(new iCalDateTime(startTime), new iCalDateTime(endTime));
         }
@@ -748,11 +649,11 @@ namespace DDay.iCal
                 new iCalDateTime(DateUtil.GetMidnight(dt.Value)),
                 new iCalDateTime(dt.Local.Plus(Duration.FromStandardDays(1)).Minus(Duration.FromTicks(1))));
         }
-        virtual public HashSet<Occurrence> GetOccurrences<T>(DateTime dt) where T : IRecurringComponent
+        virtual public HashSet<Occurrence> GetOccurrences<T>(ZonedDateTime dt) where T : IRecurringComponent
         {
             return GetOccurrences<T>(
-                new iCalDateTime(dt.Date),
-                new iCalDateTime(dt.Date.AddDays(1).AddTicks(-1)));
+                new iCalDateTime(DateUtil.GetMidnight(dt)),
+                new iCalDateTime(dt.Plus(Duration.FromStandardDays(1)).Minus(Duration.FromTicks(1))));
         }
 
         /// <summary>
@@ -768,7 +669,7 @@ namespace DDay.iCal
             foreach (var recurrable in RecurringItems)
             {
                 if (recurrable is T)
-                    occurrences.UnionWith(recurrable.GetOccurrences(startTime, endTime));
+                    occurrences.UnionWith(recurrable.GetOccurrences(startTime.Value, endTime.Value));
             }
 
             foreach (var baseRecurringItem in occurrences.Where(o => o.Source is IUniqueComponent)
@@ -779,10 +680,9 @@ namespace DDay.iCal
                 occurrences.Remove(baseRecurringItem);
             }
 
-            //occurrences.Sort();
             return occurrences;
         }
-        virtual public HashSet<Occurrence> GetOccurrences<T>(DateTime startTime, DateTime endTime) where T : IRecurringComponent
+        virtual public HashSet<Occurrence> GetOccurrences<T>(ZonedDateTime startTime, ZonedDateTime endTime) where T : IRecurringComponent
         {
             return GetOccurrences<T>(new iCalDateTime(startTime), new iCalDateTime(endTime));
         }

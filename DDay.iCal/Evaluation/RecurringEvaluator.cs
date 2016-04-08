@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using NodaTime;
 
 namespace DDay.iCal
 {
@@ -51,7 +52,7 @@ namespace DDay.iCal
         /// <param name="periodStart">The beginning date of the range to evaluate.</param>
         /// <param name="periodEnd">The end date of the range to evaluate.</param>
         /// <param name="includeReferenceDateInResults"></param>
-        virtual protected void EvaluateRRule(IDateTime referenceDate, DateTime periodStart, DateTime periodEnd, bool includeReferenceDateInResults)
+        virtual protected void EvaluateRRule(IDateTime referenceDate, ZonedDateTime periodStart, ZonedDateTime periodEnd)
         {
             // Handle RRULEs
             if (Recurrable.RecurrenceRules != null &&
@@ -62,7 +63,7 @@ namespace DDay.iCal
                     var evaluator = rrule.GetService(typeof(IEvaluator)) as IEvaluator;
                     if (evaluator != null)
                     {
-                        var periods = evaluator.Evaluate(referenceDate, periodStart, periodEnd, includeReferenceDateInResults);
+                        var periods = evaluator.Evaluate(referenceDate, periodStart, periodEnd);
                         foreach (var p in periods)
                         {
                             if (!Periods.Contains(p))
@@ -70,14 +71,6 @@ namespace DDay.iCal
                         }
                     }
                 }
-            }
-            else if (includeReferenceDateInResults)
-            {
-                // If no RRULEs were found, then we still need to add
-                // the initial reference date to the results.
-                IPeriod p = new Period(referenceDate.Copy<IDateTime>());
-                if (!Periods.Contains(p))
-                    Periods.Add(p);
             }
         }
 
@@ -170,14 +163,14 @@ namespace DDay.iCal
 
         #region Overrides
 
-        public override HashSet<IPeriod> Evaluate(IDateTime referenceDate, DateTime periodStart, DateTime periodEnd, bool includeReferenceDateInResults)
+        public override HashSet<IPeriod> Evaluate(IDateTime referenceDate, ZonedDateTime periodStart, ZonedDateTime periodEnd)
         {
             // Evaluate extra time periods, without re-evaluating ones that were already evaluated
             if ((EvaluationStartBounds == DateTime.MaxValue && EvaluationEndBounds == DateTime.MinValue) ||
                 (periodEnd.Equals(EvaluationStartBounds)) ||
                 (periodStart.Equals(EvaluationEndBounds)))
             {
-                EvaluateRRule(referenceDate, periodStart, periodEnd, includeReferenceDateInResults);
+                EvaluateRRule(referenceDate, periodStart, periodEnd);
                 EvaluateRDate(referenceDate, periodStart, periodEnd);
                 EvaluateExRule(referenceDate, periodStart, periodEnd);
                 EvaluateExDate(referenceDate, periodStart, periodEnd);
